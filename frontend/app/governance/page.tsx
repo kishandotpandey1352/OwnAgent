@@ -98,8 +98,20 @@ export default function GovernancePage() {
           <input value={requestId} onChange={(e) => setRequestId(e.target.value)} placeholder="request_id" style={{ flex: 1, padding: 12, border: "1px solid #a1a1aa", borderRadius: 8 }} />
           <button style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #18181b", cursor: "pointer" }}>Inspect</button>
         </form>
-        {audit && <pre style={{ marginTop: 16, padding: 18, borderRadius: 12, overflow: "auto", background: "rgba(127,127,127,.09)", fontSize: 12 }}>{JSON.stringify(audit, null, 2)}</pre>}
-      </section>
+{audit != null && (
+  <pre
+    style={{
+      marginTop: 16,
+      padding: 18,
+      borderRadius: 12,
+      overflow: "auto",
+      background: "rgba(127,127,127,.09)",
+      fontSize: 12,
+    }}
+  >
+    {JSON.stringify(audit, null, 2)}
+  </pre>
+)}      </section>
     </main>
   );
 }
