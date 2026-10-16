@@ -10,6 +10,12 @@ from app.agents.security.guard import (
     validate_request_context,
 )
 
+from app.agents.security.permissions import (
+    ToolAuthorizationDecision,
+    ToolAuthorizationStatus,
+    authorize_tool,
+)
+
 __all__ = [
     "BudgetDecision",
     "BudgetUsage",
@@ -18,4 +24,7 @@ __all__ = [
     "SecurityDecision",
     "frame_untrusted_content",
     "validate_request_context",
+    "ToolAuthorizationDecision",
+    "ToolAuthorizationStatus",
+    "authorize_tool",
 ]

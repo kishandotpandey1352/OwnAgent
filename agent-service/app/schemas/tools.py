@@ -10,7 +10,7 @@ class ToolRiskLevel(str, Enum):
     low = "low"
     medium = "medium"
     high = "high"
-
+    destructive = "destructive"
 
 class ToolName(str, Enum):
     memory_lookup = "memory_lookup"
@@ -34,11 +34,25 @@ class ToolCallStatus(str, Enum):
 
 
 class ToolDefinition(BaseModel):
+    """
+    Server-owned security metadata for an executable tool.
+
+    Agents and LLMs may request tools, but these properties determine
+    whether the runtime may actually execute them.
+    """
+
     name: ToolName
     description: str
     risk_level: ToolRiskLevel
+
+    required_permissions: frozenset[str] = Field(default_factory=frozenset)
+
     requires_confirmation: bool = False
     allowed_in_background: bool = True
+
+    reversible: bool = False
+    network_access: bool = False
+    external_side_effect: bool = False
 
 
 class ToolCallRecord(BaseModel):

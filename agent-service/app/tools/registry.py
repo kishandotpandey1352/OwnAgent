@@ -38,13 +38,15 @@ TOOL_REGISTRY: dict[ToolName, ToolDefinition] = {
 
     ToolName.financial_calculator: ToolDefinition(
         name=ToolName.financial_calculator,
-        description=(
-            "Calculate growth, margin, delta, percentage, or CAGR."
-        ),
+        description="Calculate growth, margin, delta, percentage, or CAGR.",
         risk_level=ToolRiskLevel.low,
+        required_permissions=frozenset(),
         requires_confirmation=False,
         allowed_in_background=True,
-    ),
+        reversible=False,
+        network_access=False,
+        external_side_effect=False,
+        ),
 
     ToolName.audit_log: ToolDefinition(
         name=ToolName.audit_log,
@@ -61,9 +63,13 @@ TOOL_REGISTRY: dict[ToolName, ToolDefinition] = {
             "chunks ranked by semantic similarity."
         ),
         risk_level=ToolRiskLevel.low,
+        required_permissions=frozenset({"documents.read"}),
         requires_confirmation=False,
         allowed_in_background=True,
-    ),
+        reversible=False,
+        network_access=False,
+        external_side_effect=False,
+        ),
 
     # Phase 3E
     ToolName.csv_profile: ToolDefinition(
@@ -90,42 +96,39 @@ TOOL_REGISTRY: dict[ToolName, ToolDefinition] = {
         risk_level=ToolRiskLevel.low,
         requires_confirmation=False,
         allowed_in_background=True,
+        required_permissions=frozenset({"datasets.read"})
     ),
 
     ToolName.financial_fact_extractor:ToolDefinition(
-        name=(
-            ToolName
-            .financial_fact_extractor
-        ),
+        name=ToolName.financial_fact_extractor,
         description=(
-            "Retrieve or extract "
-            "source-backed validated "
-            "financial facts from "
-            "selected documents."
+            "Retrieve or extract source-backed validated "
+            "financial facts from selected documents."
         ),
-        risk_level=(
-            ToolRiskLevel.medium
-        ),
+        risk_level=ToolRiskLevel.medium,
+        required_permissions=frozenset({"documents.read"}),
         requires_confirmation=False,
         allowed_in_background=True,
-    ),
-    ToolName.web_research:
-    ToolDefinition(
+        reversible=False,
+        network_access=False,
+        external_side_effect=False,
+        ),
+
+    ToolName.web_research: ToolDefinition(
         name=ToolName.web_research,
         description=(
-            "Search public web results "
-            "using Serper only after "
-            "uploaded-document evidence "
-            "has been determined to be "
-            "insufficient and web fallback "
-            "was explicitly allowed."
+            "Search public web results using Serper only after "
+            "uploaded-document evidence has been determined to be "
+            "insufficient and web fallback was explicitly allowed."
         ),
-        risk_level=(
-            ToolRiskLevel.medium
-        ),
+        risk_level=ToolRiskLevel.medium,
+        required_permissions=frozenset({"web.search"}),
         requires_confirmation=False,
         allowed_in_background=True,
-    ),
+        reversible=False,
+        network_access=True,
+        external_side_effect=False,
+        ),
 }
 
 

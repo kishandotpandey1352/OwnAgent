@@ -228,7 +228,7 @@ class ExecutionContext(ContractModel):
     tenant_id: str | None = Field(default=None, max_length=200)
     trace_id: str | None = Field(default=None, max_length=200)
     provider_id: str | None = Field(default=None, max_length=200)
-
+    granted_permissions: frozenset[str] = Field(default_factory=frozenset)
     use_documents: bool = False
     document_ids: list[str] = Field(default_factory=list, max_length=50)
     top_k: int = Field(default=6, ge=1, le=20)
