@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    min-height: 100%;
+    background:
+      radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 32%),
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 28%),
+      linear-gradient(180deg, #0b1020 0%, #090d18 100%);
+  }
+
+  body {
+    min-height: 100vh;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    font-family: var(--font-space-grotesk), "Trebuchet MS", sans-serif;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.28);
+    color: #f8fbff;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8;
+  }
+
+  .app-grid {
+    @apply grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)];
+  }
+
+  .soft-panel {
+    @apply rounded-[32px] border border-white/10 bg-panel/85 shadow-halo backdrop-blur-xl;
+  }
+
+  .frost-card {
+    @apply rounded-[28px] border border-white/10 bg-white/5 shadow-halo backdrop-blur-xl;
+  }
+}

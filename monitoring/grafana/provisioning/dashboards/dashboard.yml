@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: "Finance AI Platform"
+    orgId: 1
+    folder: "Finance AI Platform"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards

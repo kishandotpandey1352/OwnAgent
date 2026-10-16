@@ -1,0 +1,98 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finance-llm-api
+  namespace: finance-ai
+  labels:
+    app.kubernetes.io/name: finance-llm-api
+    app.kubernetes.io/part-of: finance-llm-platform
+    app.kubernetes.io/component: inference-api
+    app.kubernetes.io/runtime: gpu
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: finance-llm-api
+      app.kubernetes.io/component: inference-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: finance-llm-api
+        app.kubernetes.io/part-of: finance-llm-platform
+        app.kubernetes.io/component: inference-api
+        app.kubernetes.io/runtime: gpu
+    spec:
+      serviceAccountName: finance-inference-sa
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: finance-llm-api
+          image: 671607590681.dkr.ecr.us-east-1.amazonaws.com/finance-llm-platform-inference:v1
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: USE_MOCK_MODEL
+              value: "false"
+            - name: BASE_MODEL_NAME
+              value: "Qwen/Qwen2.5-3B-Instruct"
+            - name: ADAPTER_S3_URI
+              value: "s3://finance-llm-local-artifacts-671607590681-us-east-1/models/qwen2.5-3b-finance/runB-r16-lr2e4/adapter/"
+            - name: MODEL_ID
+              value: "qwen2.5-3b-finance-runB-r16-lr2e4"
+            - name: LOAD_IN_4BIT
+              value: "true"
+            - name: DEVICE_MAP
+              value: "auto"
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            - name: HF_HOME
+              value: "/tmp/hf-cache"
+            - name: TRANSFORMERS_CACHE
+              value: "/tmp/hf-cache"
+            - name: HUGGINGFACE_HUB_CACHE
+              value: "/tmp/hf-cache"
+            - name: FINANCE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: finance-api-secret
+                  key: FINANCE_API_KEY
+          resources:
+            requests:
+              cpu: "1"
+              memory: "8Gi"
+              ephemeral-storage: "12Gi"
+            limits:
+              cpu: "4"
+              memory: "14Gi"
+              ephemeral-storage: "25Gi"
+              nvidia.com/gpu: 1
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 20

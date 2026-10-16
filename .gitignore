@@ -1,0 +1,42 @@
+# Terraform local/cache/state files
+**/.terraform/
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+crash.log
+crash.*.log
+*.json
+*.csv
+*.pt
+*.pth
+*.bin
+*.jinja
+*.safetensors
+
+
+*.jsonl
+*.txt
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.env
+.env.local
+
+# RAG
+frontend/.env.local
+frontend/.data/
+
+# agent-service
+agent-service/.env
+agent-service/.venv/
+agent-service/.data/
+frontend/.env.local
+frontend/.data/
