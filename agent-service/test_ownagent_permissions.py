@@ -110,3 +110,31 @@ def test_financial_calculator_requires_no_user_permission():
     )
 
     assert decision.status == ToolAuthorizationStatus.allow
+
+
+def test_legacy_document_scope_grants_document_read():
+    context = make_context().model_copy(
+        update={"use_documents": True}
+    )
+
+    decision = authorize_tool(
+        agent_name=AgentName.document_agent,
+        tool_name=ToolName.document_search,
+        context=context,
+    )
+
+    assert decision.status == ToolAuthorizationStatus.allow
+
+
+def test_legacy_web_scope_grants_web_search():
+    context = make_context().model_copy(
+        update={"allow_web_fallback": True}
+    )
+
+    decision = authorize_tool(
+        agent_name=AgentName.web_research_agent,
+        tool_name=ToolName.web_research,
+        context=context,
+    )
+
+    assert decision.status == ToolAuthorizationStatus.allow

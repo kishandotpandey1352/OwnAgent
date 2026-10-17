@@ -12,7 +12,10 @@ from app.agents.contracts import (
     AgentTask,
     ExecutionContext,
 )
-from app.agents.registry import agent_can_use_tool, get_agent_definition
+from app.agents.security.permissions import (
+    ToolAuthorizationStatus,
+    authorize_tool,
+)
 from app.schemas.tools import ToolName
 
 T = TypeVar("T")
@@ -20,6 +23,9 @@ T = TypeVar("T")
 
 class SpecialistPolicyError(ValueError):
     """Raised when a specialist invocation violates its server-owned policy."""
+
+class SpecialistApprovalRequired(ValueError):
+    """Raised when a tool requires explicit user approval before execution."""
 
 
 class SpecialistAgent:
@@ -42,13 +48,25 @@ class SpecialistAgent:
                 f"Task is assigned to {task.agent_name.value}, not {self.agent_name.value}."
             )
 
-        definition = get_agent_definition(self.agent_name)
-        if not agent_can_use_tool(self.agent_name, self.tool_name):
+        decision = authorize_tool(
+    agent_name=self.agent_name,
+    tool_name=self.tool_name,
+    context=context,
+)
+
+        if decision.status == ToolAuthorizationStatus.deny:
+            reason = "; ".join(decision.reasons) or "tool authorization denied"
+
             raise SpecialistPolicyError(
-                f"Agent {self.agent_name.value} is not permitted to use {self.tool_name.value}."
+                f"Tool {self.tool_name.value} denied: {reason}."
             )
-        if self.tool_name not in definition.allowed_tools:
-            raise SpecialistPolicyError("Agent registry/tool policy mismatch.")
+
+        if decision.status == ToolAuthorizationStatus.ask:
+            reason = "; ".join(decision.reasons) or "user approval required"
+
+            raise SpecialistApprovalRequired(
+                f"Tool {self.tool_name.value} requires approval: {reason}."
+            )
 
     def _failure_result(
         self,
@@ -95,6 +113,21 @@ class SpecialistAgent:
             self._validate_common(task=task, context=context)
             output = invoke()
             return to_result(output, started_at, started_clock)
+
+        except SpecialistApprovalRequired as exc:
+            return self._failure_result(
+                task=task,
+                started_at=started_at,
+                started_clock=started_clock,
+                code="AGENT_APPROVAL_REQUIRED",
+                message=str(exc),
+                retryable=False,
+                metadata={
+                    "tool_name": self.tool_name.value,
+                    "authorization_status": "ask",
+                },
+            )
+        
         except SpecialistPolicyError as exc:
             return self._failure_result(
                 task=task,
