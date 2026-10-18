@@ -50,7 +50,7 @@ def effective_permissions(
     """
     Resolve permissions already trusted by the runtime.
 
-    Legacy ExecutionContext scope fields remain authoritative while
+    Legacy Phase 3 ExecutionContext scope fields remain supported while
     OwnAgent migrates toward explicit generic permissions.
     """
 
@@ -67,20 +67,19 @@ def effective_permissions(
 
     return frozenset(permissions)
 
-
-def authorize_tool(
+def authorize_registered_tool(
     *,
-    agent_name: AgentName,
     tool_name: ToolName,
     context: ExecutionContext,
     confirmation_granted: bool = False,
     background_execution: bool = False,
 ) -> ToolAuthorizationDecision:
     """
-    Authorize an agent tool invocation deterministically.
+    Apply server-owned Tool Registry policy without requiring an Agent identity.
 
-    Agents and LLMs may propose tool calls but cannot grant themselves
-    permissions, confirmations, network access, or background authority.
+    This is used by trusted non-agent runtimes such as the legacy LangGraph
+    workflow. Agent runtimes must use authorize_tool(), which adds the
+    Agent Registry boundary on top.
     """
 
     tool = TOOL_REGISTRY.get(tool_name)
@@ -92,7 +91,97 @@ def authorize_tool(
             reasons=["tool is not registered"],
         )
 
-    if not agent_can_use_tool(agent_name, tool_name):
+    permissions = effective_permissions(context)
+
+    missing_permissions = (
+        set(tool.required_permissions)
+        - set(permissions)
+    )
+
+    if missing_permissions:
+        return ToolAuthorizationDecision(
+            status=ToolAuthorizationStatus.deny,
+            tool_name=tool_name,
+            reasons=[
+                "missing permissions: "
+                + ", ".join(sorted(missing_permissions))
+            ],
+        )
+
+    if (
+        background_execution
+        and not tool.allowed_in_background
+    ):
+        return ToolAuthorizationDecision(
+            status=ToolAuthorizationStatus.deny,
+            tool_name=tool_name,
+            reasons=[
+                "tool is not permitted during background execution"
+            ],
+        )
+
+    if (
+        tool.requires_confirmation
+        and not confirmation_granted
+    ):
+        return ToolAuthorizationDecision(
+            status=ToolAuthorizationStatus.ask,
+            tool_name=tool_name,
+            reasons=[
+                "explicit user confirmation is required"
+            ],
+        )
+
+    return ToolAuthorizationDecision(
+        status=ToolAuthorizationStatus.allow,
+        tool_name=tool_name,
+    )
+
+
+def authorize_tool(
+    *,
+    agent_name: AgentName,
+    tool_name: ToolName,
+    context: ExecutionContext,
+    confirmation_granted: bool = False,
+    background_execution: bool = False,
+) -> ToolAuthorizationDecision:
+    """
+    Deterministically authorize an agent tool invocation.
+
+    This applies two security layers:
+
+    1. Agent Registry policy
+       - Is this agent allowed to use this tool?
+       - Is this agent allowed network access?
+       - Does this agent require web permission?
+
+    2. Tool Registry policy
+       - Does the execution context contain required permissions?
+       - Is background execution allowed?
+       - Is explicit confirmation required?
+
+    Agents and LLMs may propose tool calls, but they cannot grant
+    themselves permissions, network access, confirmation, or authority.
+    """
+
+    tool = TOOL_REGISTRY.get(tool_name)
+
+    if tool is None:
+        return ToolAuthorizationDecision(
+            status=ToolAuthorizationStatus.deny,
+            tool_name=tool_name,
+            reasons=["tool is not registered"],
+        )
+
+    # ---------------------------------------------------------
+    # 1. Agent Registry boundary
+    # ---------------------------------------------------------
+
+    if not agent_can_use_tool(
+        agent_name,
+        tool_name,
+    ):
         return ToolAuthorizationDecision(
             status=ToolAuthorizationStatus.deny,
             tool_name=tool_name,
@@ -101,7 +190,13 @@ def authorize_tool(
             ],
         )
 
-    definition = get_agent_definition(agent_name)
+    definition = get_agent_definition(
+        agent_name
+    )
+
+    # ---------------------------------------------------------
+    # 2. Network boundary
+    # ---------------------------------------------------------
 
     if (
         tool.network_access
@@ -115,7 +210,13 @@ def authorize_tool(
             ],
         )
 
-    permissions = effective_permissions(context)
+    # ---------------------------------------------------------
+    # 3. Agent-specific web permission boundary
+    # ---------------------------------------------------------
+
+    permissions = effective_permissions(
+        context
+    )
 
     if (
         definition.web_permission_required
@@ -128,6 +229,44 @@ def authorize_tool(
                 "web access is not permitted for this request"
             ],
         )
+
+    # ---------------------------------------------------------
+    # 4. Delegate generic Tool Registry policy
+    # ---------------------------------------------------------
+
+    return authorize_registered_tool(
+        tool_name=tool_name,
+        context=context,
+        confirmation_granted=confirmation_granted,
+        background_execution=background_execution,
+    )
+
+def authorize_registered_tool(
+    *,
+    tool_name: ToolName,
+    context: ExecutionContext,
+    confirmation_granted: bool = False,
+    background_execution: bool = False,
+) -> ToolAuthorizationDecision:
+    """
+    Apply Tool Registry policy without requiring an Agent identity.
+
+    Used by trusted runtimes such as the legacy LangGraph execution path.
+
+    Agent-based runtimes should use authorize_tool(), which applies
+    Agent Registry policy first and then delegates here.
+    """
+
+    tool = TOOL_REGISTRY.get(tool_name)
+
+    if tool is None:
+        return ToolAuthorizationDecision(
+            status=ToolAuthorizationStatus.deny,
+            tool_name=tool_name,
+            reasons=["tool is not registered"],
+        )
+
+    permissions = effective_permissions(context)
 
     missing_permissions = (
         set(tool.required_permissions)

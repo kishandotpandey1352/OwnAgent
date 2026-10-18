@@ -54,6 +54,11 @@ from app.tools.registry import (
     run_web_research,
 )
 
+from app.agents.security.legacy_runtime import (
+    build_legacy_execution_context,
+    require_legacy_tool_authorization,
+)
+
 # =========================================================
 # Financial-fact extraction preflight
 # =========================================================
@@ -351,6 +356,8 @@ def run_tools_node(
         ToolCallRecord
     ] = []
 
+    execution_context = build_legacy_execution_context(state)
+
     document_search_output = None
 
     # ---------------------------------------------------------
@@ -415,6 +422,11 @@ def run_tools_node(
         )
 
         try:
+            require_legacy_tool_authorization(
+                tool_name=ToolName.document_search,
+                context=execution_context,
+            )
+
             document_search_output = (
                 run_document_search(
                     state["user_id"],
@@ -574,6 +586,11 @@ def run_tools_node(
             )
 
             try:
+
+                require_legacy_tool_authorization(
+                tool_name=ToolName.financial_fact_extractor,
+                context=execution_context,
+                )
                 fact_output = (
                     run_financial_fact_extractor(
                         state["user_id"],
@@ -671,6 +688,10 @@ def run_tools_node(
         )
 
         try:
+            require_legacy_tool_authorization(
+                tool_name=ToolName.csv_profile,
+                context=execution_context,
+            )
             csv_profile_output = (
                 run_csv_profile(
                     state["user_id"],
@@ -739,6 +760,10 @@ def run_tools_node(
         )
 
         try:
+            require_legacy_tool_authorization(
+                tool_name=ToolName.financial_calculator,
+                context=execution_context,
+            )
             calculator_output = (
                 run_financial_calculator(
                     calculator_input
@@ -806,6 +831,10 @@ def run_tools_node(
         )
 
         try:
+            require_legacy_tool_authorization(
+                tool_name=ToolName.chart_planner,
+                context=execution_context,
+            )
             chart_planner_output = (
                 run_chart_planner(
                     state["user_id"],
@@ -957,6 +986,11 @@ def run_tools_node(
             )
 
         try:
+
+            require_legacy_tool_authorization(
+            tool_name=ToolName.web_research,
+            context=execution_context,
+        )
             web_output = (
                 run_web_research(
                     state["user_id"],
