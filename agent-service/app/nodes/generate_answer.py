@@ -4,34 +4,26 @@ import json
 import re
 from typing import Any
 
-from langchain_core.messages import (
-    HumanMessage,
-    SystemMessage,
-)
 
-from langchain_openai import ChatOpenAI
+
 
 from app.core.config import settings
 from app.graphs.state import FinanceAgentState
-
+from app.models.contracts import (
+    ModelMessage,
+    ModelMessageRole,
+    ModelRequest,
+)
+from app.models.runtime import (
+    get_model_gateway,
+)
 
 # =========================================================
 # Model
 # =========================================================
 
 
-def _get_chat_model() -> ChatOpenAI:
-    if not settings.openai_api_key:
-        raise RuntimeError(
-            "OPENAI_API_KEY is required for "
-            "agent answer generation."
-        )
 
-    return ChatOpenAI(
-        model=settings.agent_model,
-        temperature=0.2,
-        api_key=settings.openai_api_key,
-    )
 
 
 # =========================================================
@@ -1860,37 +1852,47 @@ Requirements:
     # Model invocation
     # =====================================================
 
-    model = _get_chat_model()
+    gateway = get_model_gateway()
 
-    response = model.invoke(
-        [
-            SystemMessage(
-                content=system_prompt
-            ),
-            HumanMessage(
-                content=user_prompt
-            ),
-        ]
+    provider_id = (
+        state.get("provider_id")
+        or None
     )
 
-    content = (
-        response.content
+    model_response = gateway.generate(
+        provider_id=provider_id,
+        request=ModelRequest(
+            messages=[
+                ModelMessage(
+                    role=ModelMessageRole.system,
+                    content=system_prompt,
+                ),
+                ModelMessage(
+                    role=ModelMessageRole.user,
+                    content=user_prompt,
+                ),
+            ],
+            model=settings.agent_model,
+            temperature=0.2,
+            response_format="text",
+            metadata={
+                "request_id": state.get(
+                    "request_id"
+                ),
+                "runtime": "legacy_langgraph",
+                "purpose": "answer_generation",
+            },
+        ),
     )
 
-    if not isinstance(
-        content,
-        str,
-    ):
-        content = str(
-            content
-        )
+    content = model_response.text
 
     # =====================================================
     # Updated graph state
     # =====================================================
 
     return {
-        **state,
-        "answer": content,
-        "model": settings.agent_model,
+    **state,
+    "answer": content,
+    "model": model_response.model,
     }
