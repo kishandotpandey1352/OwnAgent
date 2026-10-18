@@ -25,7 +25,7 @@ class SpecialistPolicyError(ValueError):
     """Raised when a specialist invocation violates its server-owned policy."""
 
 class SpecialistApprovalRequired(ValueError):
-    """Raised when a tool requires explicit user approval before execution."""
+    """Raised when a specialist tool requires explicit user approval."""
 
 
 class SpecialistAgent:

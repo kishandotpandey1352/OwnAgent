@@ -9,6 +9,7 @@ from app.agents.security.permissions import (
 )
 from app.schemas.tools import ToolName
 
+from app.agents.specialists.factory import get_specialist_agent
 
 def make_context(
     permissions: frozenset[str] = frozenset(),
@@ -134,6 +135,56 @@ def test_legacy_web_scope_grants_web_search():
     decision = authorize_tool(
         agent_name=AgentName.web_research_agent,
         tool_name=ToolName.web_research,
+        context=context,
+    )
+
+    assert decision.status == ToolAuthorizationStatus.allow
+
+
+def test_specialist_runtime_denies_missing_document_permission():
+    context = make_context()
+
+    agent = get_specialist_agent(
+        AgentName.document_agent
+    )
+
+    assert context.use_documents is False
+    assert "documents.read" not in context.granted_permissions
+
+    decision = authorize_tool(
+        agent_name=AgentName.document_agent,
+        tool_name=ToolName.document_search,
+        context=context,
+    )
+
+    assert decision.status == ToolAuthorizationStatus.deny
+
+
+def test_specialist_runtime_accepts_legacy_document_scope():
+    context = make_context().model_copy(
+        update={
+            "use_documents": True,
+            "document_ids": ["document-1"],
+        }
+    )
+
+    decision = authorize_tool(
+        agent_name=AgentName.document_agent,
+        tool_name=ToolName.document_search,
+        context=context,
+    )
+
+    assert decision.status == ToolAuthorizationStatus.allow
+
+
+def test_specialist_runtime_accepts_explicit_document_permission():
+    context = make_context(
+        frozenset({"documents.read"})
+    )
+
+    decision = authorize_tool(
+        agent_name=AgentName.document_agent,
+        tool_name=ToolName.document_search,
         context=context,
     )
 
