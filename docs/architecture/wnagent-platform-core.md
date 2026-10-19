@@ -25,7 +25,7 @@
 
 
 
-new architecture::
+week 1 new architecture::
 
                          OwnAgent
                             │
@@ -50,3 +50,19 @@ new architecture::
           ┌────────┬────────┼────────┬─────────┐
           │        │        │        │         │
        Student Research  Finance  Science   Creative
+
+week 2:
+
+                  ModelGateway
+                       │
+          ┌────────────┼────────────┐
+          │            │            │
+      generate       stream       health
+          │            │            │
+          ├──────── capabilities ────┤
+          │            │            │
+          └──────── estimate ────────┘
+                       │
+                ModelProvider
+                       │
+                    OpenAI

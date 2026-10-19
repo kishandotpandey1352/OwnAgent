@@ -19,6 +19,22 @@ class Settings(
     )
 
     # -----------------------------------------------------
+    # OwnAgent - local Ollama provider
+    # -----------------------------------------------------
+
+    ollama_enabled: bool = True
+
+    ollama_base_url: str = (
+        "http://127.0.0.1:11434"
+    )
+
+    # No model is forced by default.
+    # The Model Registry / Router will eventually select one.
+    ollama_default_model: str | None = None
+
+    ollama_timeout_seconds: float = 120.0
+
+    # -----------------------------------------------------
     # Phase 3D - document search
     # -----------------------------------------------------
 

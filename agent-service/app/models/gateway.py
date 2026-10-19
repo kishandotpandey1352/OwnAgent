@@ -57,6 +57,14 @@ class ModelGateway:
 
         return selected
 
+    def has_provider(
+        self,
+        provider_id: str,
+    ) -> bool:
+        return self._registry.contains(
+            provider_id
+        )
+
 
     def _resolve_provider(
         self,
