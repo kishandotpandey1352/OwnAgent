@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Protocol, runtime_checkable
 
 from app.models.contracts import (
+    ModelCapabilities,
+    ModelCostEstimate,
+    ModelHealth,
     ModelProviderDescriptor,
     ModelRequest,
     ModelResponse,
+    ModelStreamChunk,
 )
 
 
@@ -29,4 +34,31 @@ class ModelProvider(Protocol):
         self,
         request: ModelRequest,
     ) -> ModelResponse:
+        ...
+
+
+    def stream(
+        self,
+        request: ModelRequest,
+    ) -> Iterator[ModelStreamChunk]:
+        ...
+
+
+    def health(
+        self,
+    ) -> ModelHealth:
+        ...
+
+
+    def capabilities(
+        self,
+        model: str | None = None,
+    ) -> ModelCapabilities:
+        ...
+
+
+    def estimate(
+        self,
+        request: ModelRequest,
+    ) -> ModelCostEstimate:
         ...

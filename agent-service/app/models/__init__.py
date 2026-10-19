@@ -1,9 +1,14 @@
 from app.models.contracts import (
+    ModelCapabilities,
+    ModelCostEstimate,
+    ModelHealth,
+    ModelHealthStatus,
     ModelMessage,
     ModelMessageRole,
     ModelProviderDescriptor,
     ModelRequest,
     ModelResponse,
+    ModelStreamChunk,
     ModelUsage,
     ProviderLocation,
 )
@@ -14,7 +19,11 @@ from app.models.registry import (
 )
 
 __all__ = [
+    "ModelCapabilities",
+    "ModelCostEstimate",
     "ModelGateway",
+    "ModelHealth",
+    "ModelHealthStatus",
     "ModelMessage",
     "ModelMessageRole",
     "ModelProvider",
@@ -22,6 +31,7 @@ __all__ = [
     "ModelProviderRegistry",
     "ModelRequest",
     "ModelResponse",
+    "ModelStreamChunk",
     "ModelUsage",
     "ProviderLocation",
 ]

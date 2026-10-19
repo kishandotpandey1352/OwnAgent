@@ -8,6 +8,9 @@ from app.models.providers.openai import (
     OpenAIChatProvider,
 )
 
+from app.models.contracts import (
+    ModelHealthStatus,
+)
 
 def test_openai_provider_descriptor():
     provider = OpenAIChatProvider(
@@ -81,3 +84,64 @@ def test_model_request_stays_provider_agnostic():
     assert "openai" not in str(
         dumped
     ).lower()
+
+def test_openai_provider_reports_unavailable_without_key():
+    provider = OpenAIChatProvider(
+        provider_id="openai-test",
+        api_key="",
+        default_model="test-model",
+    )
+
+    health = provider.health()
+
+    assert (
+        health.status
+        == ModelHealthStatus.unavailable
+    )
+
+
+def test_openai_provider_capabilities_are_normalized():
+    provider = OpenAIChatProvider(
+        provider_id="openai-test",
+        api_key="test-key",
+        default_model="test-model",
+    )
+
+    capabilities = provider.capabilities()
+
+    assert capabilities.provider_id == "openai-test"
+    assert capabilities.text_generation is True
+    assert capabilities.streaming is True
+    assert capabilities.location == ProviderLocation.remote
+
+
+def test_openai_provider_estimate_does_not_invent_pricing():
+    provider = OpenAIChatProvider(
+        provider_id="openai-test",
+        api_key="test-key",
+        default_model="test-model",
+    )
+
+    estimate = provider.estimate(
+        ModelRequest(
+            messages=[
+                ModelMessage(
+                    role=ModelMessageRole.user,
+                    content="Hello",
+                )
+            ]
+        )
+    )
+
+    assert estimate.local is False
+    assert estimate.pricing_available is False
+
+    assert (
+        estimate.estimated_provider_cost
+        is None
+    )
+
+    assert (
+        "PRICING_METADATA_UNAVAILABLE"
+        in estimate.reason_codes
+    )

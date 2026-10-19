@@ -19,6 +19,24 @@ from app.models.registry import (
     ModelProviderRegistry,
 )
 
+from collections.abc import Iterator
+from decimal import Decimal
+
+from app.models.contracts import (
+    ModelCapabilities,
+    ModelCostEstimate,
+    ModelHealth,
+    ModelHealthStatus,
+    ModelMessage,
+    ModelMessageRole,
+    ModelProviderDescriptor,
+    ModelRequest,
+    ModelResponse,
+    ModelStreamChunk,
+    ModelUsage,
+    ProviderLocation,
+)
+
 
 class FakeProvider:
     def __init__(
@@ -69,6 +87,95 @@ class FakeProvider:
                 total_tokens=15,
             ),
             finish_reason="stop",
+        )
+
+    def stream(
+    self,
+    request: ModelRequest,
+) -> Iterator[ModelStreamChunk]:
+        model_name = (
+            request.model
+            or self.descriptor.default_model
+            or "fake-model"
+        )
+
+        yield ModelStreamChunk(
+            delta="fake ",
+            provider_id=(
+                self._response_provider_id
+            ),
+            model=model_name,
+        )
+
+        yield ModelStreamChunk(
+            delta="response",
+            provider_id=(
+                self._response_provider_id
+            ),
+            model=model_name,
+            finish_reason="stop",
+        )
+
+
+    def health(
+        self,
+    ) -> ModelHealth:
+        return ModelHealth(
+            provider_id=(
+                self._response_provider_id
+            ),
+            status=ModelHealthStatus.healthy,
+            latency_ms=1.0,
+        )
+
+
+    def capabilities(
+        self,
+        model: str | None = None,
+    ) -> ModelCapabilities:
+        return ModelCapabilities(
+            provider_id=(
+                self._response_provider_id
+            ),
+            model=(
+                model
+                or self.descriptor.default_model
+            ),
+            location=(
+                self.descriptor.location
+            ),
+            text_generation=True,
+            streaming=True,
+        )
+
+
+    def estimate(
+        self,
+        request: ModelRequest,
+    ) -> ModelCostEstimate:
+        return ModelCostEstimate(
+            provider_id=(
+                self._response_provider_id
+            ),
+            model=(
+                request.model
+                or self.descriptor.default_model
+                or "fake-model"
+            ),
+            local=(
+                self.descriptor.location
+                == ProviderLocation.local
+            ),
+            estimated_provider_cost=(
+                Decimal("0")
+                if (
+                    self.descriptor.location
+                    == ProviderLocation.local
+                )
+                else Decimal("0.01")
+            ),
+            currency="GBP",
+            pricing_available=True,
         )
 
 
@@ -222,4 +329,117 @@ def test_provider_location_is_explicit():
     assert (
         descriptor.location
         == ProviderLocation.local
+    )
+
+
+def test_gateway_health_uses_selected_provider():
+    registry = ModelProviderRegistry(
+        [
+            FakeProvider(
+                "local-test",
+                location=ProviderLocation.local,
+            )
+        ]
+    )
+
+    gateway = ModelGateway(
+        registry=registry,
+    )
+
+    result = gateway.health(
+        provider_id="local-test"
+    )
+
+    assert result.provider_id == "local-test"
+    assert (
+        result.status
+        == ModelHealthStatus.healthy
+    )
+
+
+def test_gateway_capabilities_use_selected_provider():
+    registry = ModelProviderRegistry(
+        [
+            FakeProvider(
+                "local-test",
+                location=ProviderLocation.local,
+            )
+        ]
+    )
+
+    gateway = ModelGateway(
+        registry=registry,
+    )
+
+    result = gateway.capabilities(
+        provider_id="local-test",
+        model="test-model",
+    )
+
+    assert result.provider_id == "local-test"
+    assert result.model == "test-model"
+    assert result.streaming is True
+
+
+def test_gateway_estimate_uses_selected_provider():
+    registry = ModelProviderRegistry(
+        [
+            FakeProvider(
+                "local-test",
+                location=ProviderLocation.local,
+            )
+        ]
+    )
+
+    gateway = ModelGateway(
+        registry=registry,
+    )
+
+    result = gateway.estimate(
+        provider_id="local-test",
+        request=make_request(),
+    )
+
+    assert result.provider_id == "local-test"
+    assert result.local is True
+    assert (
+        result.estimated_provider_cost
+        == Decimal("0")
+    )
+
+
+def test_gateway_stream_uses_selected_provider():
+    registry = ModelProviderRegistry(
+        [
+            FakeProvider(
+                "local-test",
+                location=ProviderLocation.local,
+            )
+        ]
+    )
+
+    gateway = ModelGateway(
+        registry=registry,
+    )
+
+    chunks = list(
+        gateway.stream(
+            provider_id="local-test",
+            request=make_request(),
+        )
+    )
+
+    assert len(chunks) == 2
+
+    assert (
+        "".join(
+            chunk.delta
+            for chunk in chunks
+        )
+        == "fake response"
+    )
+
+    assert all(
+        chunk.provider_id == "local-test"
+        for chunk in chunks
     )

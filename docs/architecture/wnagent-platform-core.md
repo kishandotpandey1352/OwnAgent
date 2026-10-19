@@ -22,3 +22,31 @@
           ┌───────────┼────────────┐
           │           │            │
        OpenAI       Ollama      LM Studio
+
+
+
+new architecture::
+
+                         OwnAgent
+                            │
+              ┌─────────────┴─────────────┐
+              │                           │
+          Web App                    Desktop App
+         Next.js                     Tauri
+              │                           │
+              └─────────────┬─────────────┘
+                            │
+                     OwnAgent Core
+                            │
+          ┌─────────────────┼─────────────────┐
+          │                 │                 │
+       Models             Tools           Workflows
+          │                 │                 │
+       Policies         Connectors        Knowledge
+          │                 │                 │
+          └─────────────────┼─────────────────┘
+                            │
+                    Capability Packs
+          ┌────────┬────────┼────────┬─────────┐
+          │        │        │        │         │
+       Student Research  Finance  Science   Creative
