@@ -4,9 +4,6 @@ import json
 import re
 from typing import Any
 
-
-
-
 from app.core.config import settings
 from app.graphs.state import FinanceAgentState
 from app.models.contracts import (
