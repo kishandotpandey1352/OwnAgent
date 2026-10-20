@@ -15,9 +15,21 @@ from app.models.providers.openai import (
 from app.models.registry import (
     ModelProviderRegistry,
 )
+from app.models.contracts import (
+    ProviderLocation,
+)
+
+from app.models.providers.openai_compatible import (
+    OpenAICompatibleProvider,
+)
+
+
 
 OPENAI_PREMIUM_PROVIDER_ID = "openai-premium"
+
 OLLAMA_LOCAL_PROVIDER_ID = "ollama-local"
+
+LMSTUDIO_LOCAL_PROVIDER_ID = "lmstudio-local"
 
 @lru_cache(maxsize=1)
 def get_model_gateway() -> ModelGateway:
@@ -55,6 +67,30 @@ def get_model_gateway() -> ModelGateway:
                 ),
                 timeout_seconds=(
                     settings.ollama_timeout_seconds
+                ),
+            )
+        )
+
+    if settings.lmstudio_enabled:
+        registry.register(
+            OpenAICompatibleProvider(
+                provider_id=(
+                    LMSTUDIO_LOCAL_PROVIDER_ID
+                ),
+                base_url=(
+                    settings.lmstudio_base_url
+                ),
+                default_model=(
+                    settings.lmstudio_default_model
+                ),
+                api_key=(
+                    settings.lmstudio_api_key
+                ),
+                location=(
+                    ProviderLocation.local
+                ),
+                timeout_seconds=(
+                    settings.lmstudio_timeout_seconds
                 ),
             )
         )

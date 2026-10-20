@@ -66,3 +66,16 @@ week 2:
                 ModelProvider
                        │
                     OpenAI
+
+Request-response flow::
+
+                         SAME ModelRequest
+                                │
+                          ModelGateway
+                    ┌───────────┼────────────┐
+                    │           │            │
+                  Ollama     LM Studio     OpenAI
+                    │           │            │
+                    └───────────┼────────────┘
+                                │
+                         SAME ModelResponse

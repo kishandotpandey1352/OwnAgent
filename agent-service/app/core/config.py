@@ -35,6 +35,26 @@ class Settings(
     ollama_timeout_seconds: float = 120.0
 
     # -----------------------------------------------------
+    # OwnAgent - LM Studio / OpenAI-compatible local server
+    # -----------------------------------------------------
+
+    lmstudio_enabled: bool = True
+
+    lmstudio_base_url: str = (
+        "http://127.0.0.1:1234/v1"
+    )
+
+    # Use the exact model ID exposed by GET /v1/models.
+    # Do not hard-code a model here for every OwnAgent user.
+    lmstudio_default_model: str | None = None
+
+    # Local LM Studio normally does not require a key,
+    # but keep the field for installations that enable auth.
+    lmstudio_api_key: str | None = None
+
+    lmstudio_timeout_seconds: float = 120.0
+
+    # -----------------------------------------------------
     # Phase 3D - document search
     # -----------------------------------------------------
 
